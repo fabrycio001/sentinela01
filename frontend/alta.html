@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Alta Médica</title>
+
+
+  <!--
+    Biblioteca jsPDF
+    Responsável pela criação do PDF.
+  -->
+
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+  </script>
+
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+
+      margin: 0;
+
+      padding: 20px;
+
+      background: #f2f4f8;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    }
+
+
+    .container {
+
+      width: 100%;
+
+      max-width: 750px;
+
+      margin: 30px auto;
+
+      background: white;
+
+      padding: 35px;
+
+      border-radius: 12px;
+
+      box-shadow:
+        0 4px 20px
+        rgba(0,0,0,0.12);
+
+    }
+
+
+    h1 {
+
+      margin: 0;
+
+      text-align: center;
+
+      color: #333;
+
+    }
+
+
+    .subtitulo {
+
+      text-align: center;
+
+      color: #777;
+
+      margin-top: 10px;
+
+      margin-bottom: 30px;
+
+    }
+
+
+    .campo {
+
+      margin-bottom: 22px;
+
+    }
+
+
+    label {
+
+      display: block;
+
+      font-weight: bold;
+
+      margin-bottom: 8px;
+
+      color: #333;
+
+    }
+
+
+    input,
+    textarea {
+
+      width: 100%;
+
+      padding: 13px;
+
+      border: 1px solid #ccc;
+
+      border-radius: 6px;
+
+      font-size: 16px;
+
+      font-family: Arial, sans-serif;
+
+    }
+
+
+    input:focus,
+    textarea:focus {
+
+      outline: none;
+
+      border-color: #007bff;
+
+      box-shadow:
+        0 0 0 2px
+        rgba(0,123,255,0.1);
+
+    }
+
+
+    input[readonly] {
+
+      background: #f1f1f1;
+
+      color: #555;
+
+    }
+
+
+    textarea {
+
+      min-height: 200px;
+
+      resize: vertical;
+
+      line-height: 1.5;
+
+    }
+
+
+    .botoes {
+
+      display: flex;
+
+      justify-content: center;
+
+      gap: 12px;
+
+      margin-top: 30px;
+
+      flex-wrap: wrap;
+
+    }
+
+
+    button {
+
+      border: none;
+
+      border-radius: 6px;
+
+      padding: 13px 22px;
+
+      font-size: 15px;
+
+      font-weight: bold;
+
+      cursor: pointer;
+
+    }
+
+
+    .btn-voltar {
+
+      background: #6c757d;
+
+      color: white;
+
+    }
+
+
+    .btn-voltar:hover {
+
+      background: #545b62;
+
+    }
+
+
+    .btn-pdf {
+
+      background: #28a745;
+
+      color: white;
+
+    }
+
+
+    .btn-pdf:hover {
+
+      background: #218838;
+
+    }
+
+
+    .aviso {
+
+      background: #fff3cd;
+
+      border: 1px solid #ffeeba;
+
+      color: #856404;
+
+      padding: 12px;
+
+      border-radius: 6px;
+
+      margin-bottom: 25px;
+
+      font-size: 14px;
+
+    }
+
+
+    @media (max-width: 600px) {
+
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 20px;
+        margin: 10px auto;
+      }
+
+      .botoes {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+  <h1>
+    🩺 Alta Médica
+  </h1>
+
+
+  <p class="subtitulo">
+    Emissão do documento de alta do paciente
+  </p>
+
+
+
+  <div class="aviso">
+
+    ⚠️ Confira os dados antes de gerar o documento.
+
+  </div>
+
+
+
+  <!-- PACIENTE -->
+
+  <div class="campo">
+
+    <label for="paciente">
+      Paciente
+    </label>
+
+
+    <input
+      type="text"
+      id="paciente"
+      readonly
+    >
+
+  </div>
+
+
+
+  <!-- DATA -->
+
+  <div class="campo">
+
+    <label for="data">
+      Data da Alta
+    </label>
+
+
+    <input
+      type="text"
+      id="data"
+      readonly
+    >
+
+  </div>
+
+
+
+  <!-- MOTIVO -->
+
+  <div class="campo">
+
+    <label for="motivo">
+      Motivo da Alta
+    </label>
+
+
+    <textarea
+      id="motivo"
+      placeholder="Digite o motivo da alta médica..."
+    ></textarea>
+
+  </div>
+
+
+
+  <!-- BOTÕES -->
+
+  <div class="botoes">
+
+
+    <button
+      class="btn-voltar"
+      onclick="voltar()"
+    >
+      ← Voltar
+    </button>
+
+
+    <button
+      class="btn-pdf"
+      onclick="gerarPDF()"
+    >
+      📄 Gerar e Baixar PDF
+    </button>
+
+
+  </div>
+
+
+</div>
+
+
+
+<script>
+
+
+/* =====================================================
+   PEGAR PACIENTE DA URL
+   ===================================================== */
+
+
+const parametros =
+  new URLSearchParams(
+    window.location.search
+  );
+
+
+const nomePaciente =
+  parametros.get("paciente");
+
+
+/*
+  Se o nome não vier na URL,
+  mostramos um aviso.
+*/
+
+if (
+  nomePaciente &&
+  nomePaciente.trim() !== ""
+) {
+
+  document.getElementById(
+    "paciente"
+  ).value =
+    nomePaciente;
+
+} else {
+
+  document.getElementById(
+    "paciente"
+  ).value =
+    "Paciente não informado";
+
+}
+
+
+
+/* =====================================================
+   DATA ATUAL
+   ===================================================== */
+
+
+const agora =
+  new Date();
+
+
+const dataFormatada =
+  agora.toLocaleDateString(
+    "pt-BR"
+  );
+
+
+document.getElementById(
+  "data"
+).value =
+  dataFormatada;
+
+
+
+/* =====================================================
+   VOLTAR
+   ===================================================== */
+
+
+function voltar() {
+
+  window.location.href =
+    "painel.html";
+
+}
+
+
+
+/* =====================================================
+   GERAR PDF
+   ===================================================== */
+
+
+function gerarPDF() {
+
+
+  const paciente =
+    document.getElementById(
+      "paciente"
+    ).value;
+
+
+  const data =
+    document.getElementById(
+      "data"
+    ).value;
+
+
+  const motivo =
+    document.getElementById(
+      "motivo"
+    ).value.trim();
+
+
+
+  /* ==============================
+     VALIDAR MOTIVO
+     ============================== */
+
+
+  if (!motivo) {
+
+    alert(
+      "⚠️ Digite o motivo da alta antes de gerar o PDF."
+    );
+
+    document.getElementById(
+      "motivo"
+    ).focus();
+
+    return;
+
+  }
+
+
+
+  /* ==============================
+     VERIFICAR BIBLIOTECA
+     ============================== */
+
+
+  if (
+    !window.jspdf ||
+    !window.jspdf.jsPDF
+  ) {
+
+    alert(
+      "❌ Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet."
+    );
+
+    return;
+
+  }
+
+
+
+  /* ==============================
+     CRIAR PDF
+     ============================== */
+
+
+  const {
+    jsPDF
+  } =
+    window.jspdf;
+
+
+  const doc =
+    new jsPDF();
+
+
+
+  /* ==============================
+     CONFIGURAÇÕES
+     ============================== */
+
+
+  const largura =
+    doc.internal.pageSize.getWidth();
+
+
+  const altura =
+    doc.internal.pageSize.getHeight();
+
+
+
+  /* ==============================
+     CABEÇALHO
+     ============================== */
+
+
+  doc.setFont(
+    "helvetica",
+    "bold"
+  );
+
+
+  doc.setFontSize(20);
+
+
+  doc.text(
+    "DOCUMENTO DE ALTA MÉDICA",
+    largura / 2,
+    30,
+    {
+      align: "center"
+    }
+  );
+
+
+  doc.setLineWidth(
+    0.5
+  );
+
+
+  doc.line(
+    20,
+    40,
+    largura - 20,
+    40
+  );
+
+
+
+  /* ==============================
+     PACIENTE
+     ============================== */
+
+
+  doc.setFontSize(12);
+
+
+  doc.setFont(
+    "helvetica",
+    "bold"
+  );
+
+
+  doc.text(
+    "Paciente:",
+    20,
+    58
+  );
+
+
+  doc.setFont(
+    "helvetica",
+    "normal"
+  );
+
+
+  /*
+    Divide o nome caso seja muito grande.
+  */
+
+  const nomeLinhas =
+    doc.splitTextToSize(
+      paciente,
+      135
+    );
+
+
+  doc.text(
+    nomeLinhas,
+    55,
+    58
+  );
+
+
+
+  /* ==============================
+     DATA
+     ============================== */
+
+
+  const posData =
+    58 +
+    (
+      nomeLinhas.length * 7
+    ) +
+    10;
+
+
+  doc.setFont(
+    "helvetica",
+    "bold"
+  );
+
+
+  doc.text(
+    "Data da Alta:",
+    20,
+    posData
+  );
+
+
+  doc.setFont(
+    "helvetica",
+    "normal"
+  );
+
+
+  doc.text(
+    data,
+    55,
+    posData
+  );
+
+
+
+  /* ==============================
+     MOTIVO
+     ============================== */
+
+
+  const posMotivo =
+    posData + 22;
+
+
+  doc.setFont(
+    "helvetica",
+    "bold"
+  );
+
+
+  doc.text(
+    "Motivo da Alta:",
+    20,
+    posMotivo
+  );
+
+
+  doc.setFont(
+    "helvetica",
+    "normal"
+  );
+
+
+  /*
+    Quebra o texto automaticamente
+    para não sair da página.
+  */
+
+  const motivoLinhas =
+    doc.splitTextToSize(
+      motivo,
+      165
+    );
+
+
+  doc.text(
+    motivoLinhas,
+    20,
+    posMotivo + 12
+  );
+
+
+
+  /* ==============================
+     ASSINATURA
+     ============================== */
+
+
+  let posAssinatura =
+    posMotivo +
+    12 +
+    (
+      motivoLinhas.length * 7
+    ) +
+    35;
+
+
+  /*
+    Evita que a assinatura fique
+    muito próxima do rodapé.
+  */
+
+  if (
+    posAssinatura >
+    altura - 50
+  ) {
+
+    doc.addPage();
+
+    posAssinatura = 80;
+
+  }
+
+
+
+  doc.line(
+    55,
+    posAssinatura,
+    155,
+    posAssinatura
+  );
+
+
+  doc.setFontSize(10);
+
+
+  doc.text(
+    "Assinatura do Médico",
+    largura / 2,
+    posAssinatura + 7,
+    {
+      align: "center"
+    }
+  );
+
+
+
+  /* ==============================
+     RODAPÉ
+     ============================== */
+
+
+  doc.setFontSize(9);
+
+
+  doc.setTextColor(
+    100,
+    100,
+    100
+  );
+
+
+  doc.text(
+    "Documento de alta médica",
+    largura / 2,
+    altura - 15,
+    {
+      align: "center"
+    }
+  );
+
+
+
+  /* ==============================
+     NOME DO ARQUIVO
+     ============================== */
+
+
+  let nomeArquivo =
+    paciente
+      .normalize("NFD")
+      .replace(
+        /[\u0300-\u036f]/g,
+        ""
+      )
+      .replace(
+        /[^a-zA-Z0-9 ]/g,
+        ""
+      )
+      .trim()
+      .replace(
+        /\s+/g,
+        "_"
+      );
+
+
+  if (!nomeArquivo) {
+
+    nomeArquivo =
+      "paciente";
+
+  }
+
+
+  nomeArquivo =
+    "alta_" +
+    nomeArquivo +
+    ".pdf";
+
+
+
+  /* ==============================
+     BAIXAR PDF
+     ============================== */
+
+
+  doc.save(
+    nomeArquivo
+  );
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
+```
